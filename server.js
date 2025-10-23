@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3000;
 
 // 🔐 PayNecta credentials
 const PAYNECTA_EMAIL = "ceofreddy254@gmail.com";
-const PAYNECTA_API_KEY = "hmp_iDgzpvlXXUUTXZEn0jsj6K3ZxIBDrTcTyz8QDOl9";
-const PAYNECTA_CODE = "PNT_109820";
+const PAYNECTA_API_KEY = "hmp_frCOR914YZjJiOoTsNiF6m5AXka5TVgtTKyeeoTO";
+const PAYNECTA_CODE = "PNT_366813";
 
 // File to store receipts
 const receiptsFile = path.join(__dirname, "receipts.json");
