@@ -95,11 +95,11 @@ app.post("/pay", async (req, res) => {
       receipts[reference] = receiptData;
       writeReceipts(receipts);
 
-      // ✅ Start background PayNecta status checker (every 15s)
+      // ✅ Correct PayNecta status check
       const interval = setInterval(async () => {
         try {
-          const checkResp = await axios.get(
-            `https://paynecta.co.ke/api/v1/payment/${transaction_reference}`,
+          const statusResp = await axios.get(
+            `https://paynecta.co.ke/api/v1/payment/status?transaction_reference=${transaction_reference}`,
             {
               headers: {
                 "X-API-Key": PAYNECTA_API_KEY,
@@ -108,26 +108,29 @@ app.post("/pay", async (req, res) => {
             }
           );
 
-          const payStatus = checkResp.data.data?.status?.toLowerCase();
+          const payStatus = statusResp.data.data?.status?.toLowerCase();
           console.log(`[${reference}] PayNecta status:`, payStatus);
 
-          if (payStatus === "completed" || payStatus === "success") {
-            let receiptsNow = readReceipts();
-            if (receiptsNow[reference]) {
-              receiptsNow[reference].status = "processing";
-              receiptsNow[reference].status_note = "✅ Payment confirmed. Loan processing started.";
-              receiptsNow[reference].timestamp = new Date().toISOString();
-              writeReceipts(receiptsNow);
-            }
+          let receiptsNow = readReceipts();
+          const currentReceipt = receiptsNow[reference];
+
+          if (!currentReceipt) return;
+
+          if (payStatus === "completed" || payStatus === "processing") {
+            currentReceipt.status = "processing";
+            currentReceipt.transaction_code =
+              statusResp.data.data.mpesa_receipt_number || null;
+            currentReceipt.status_note =
+              "✅ Payment confirmed successfully. Loan processing started.";
+            currentReceipt.timestamp = new Date().toISOString();
+            writeReceipts(receiptsNow);
             clearInterval(interval);
           } else if (payStatus === "failed" || payStatus === "cancelled") {
-            let receiptsNow = readReceipts();
-            if (receiptsNow[reference]) {
-              receiptsNow[reference].status = "cancelled";
-              receiptsNow[reference].status_note = "❌ Payment failed or cancelled.";
-              receiptsNow[reference].timestamp = new Date().toISOString();
-              writeReceipts(receiptsNow);
-            }
+            currentReceipt.status = "cancelled";
+            currentReceipt.status_note =
+              statusResp.data.data.failure_reason || "❌ Payment failed or cancelled.";
+            currentReceipt.timestamp = new Date().toISOString();
+            writeReceipts(receiptsNow);
             clearInterval(interval);
           }
         } catch (err) {
@@ -220,7 +223,7 @@ app.get("/receipt/:reference", (req, res) => {
   res.json({ success: true, receipt });
 });
 
-// ✅ 4. PDF receipt
+// ✅ 4. PDF receipt generator
 app.get("/receipt/:reference/pdf", (req, res) => {
   const receipts = readReceipts();
   const receipt = receipts[req.params.reference];
@@ -228,7 +231,6 @@ app.get("/receipt/:reference/pdf", (req, res) => {
   generateReceiptPDF(receipt, res);
 });
 
-// ✅ PDF generator
 function generateReceiptPDF(receipt, res) {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=receipt-${receipt.reference}.pdf`);
