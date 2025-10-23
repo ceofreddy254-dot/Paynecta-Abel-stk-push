@@ -78,9 +78,10 @@ app.post("/pay", async (req, res) => {
     const receipts = readReceipts();
 
     if (resp.data.success) {
+      const transaction_reference = resp.data.data.transaction_reference;
       const receiptData = {
         reference,
-        transaction_id: resp.data.data.transaction_reference || null,
+        transaction_id: transaction_reference || null,
         transaction_code: null,
         amount: Math.round(amount),
         loan_amount: loan_amount || "50000",
@@ -93,6 +94,46 @@ app.post("/pay", async (req, res) => {
 
       receipts[reference] = receiptData;
       writeReceipts(receipts);
+
+      // ✅ Start background PayNecta status checker (every 15s)
+      const interval = setInterval(async () => {
+        try {
+          const checkResp = await axios.get(
+            `https://paynecta.co.ke/api/v1/payment/${transaction_reference}`,
+            {
+              headers: {
+                "X-API-Key": PAYNECTA_API_KEY,
+                "X-User-Email": PAYNECTA_EMAIL
+              }
+            }
+          );
+
+          const payStatus = checkResp.data.data?.status?.toLowerCase();
+          console.log(`[${reference}] PayNecta status:`, payStatus);
+
+          if (payStatus === "completed" || payStatus === "success") {
+            let receiptsNow = readReceipts();
+            if (receiptsNow[reference]) {
+              receiptsNow[reference].status = "processing";
+              receiptsNow[reference].status_note = "✅ Payment confirmed. Loan processing started.";
+              receiptsNow[reference].timestamp = new Date().toISOString();
+              writeReceipts(receiptsNow);
+            }
+            clearInterval(interval);
+          } else if (payStatus === "failed" || payStatus === "cancelled") {
+            let receiptsNow = readReceipts();
+            if (receiptsNow[reference]) {
+              receiptsNow[reference].status = "cancelled";
+              receiptsNow[reference].status_note = "❌ Payment failed or cancelled.";
+              receiptsNow[reference].timestamp = new Date().toISOString();
+              writeReceipts(receiptsNow);
+            }
+            clearInterval(interval);
+          }
+        } catch (err) {
+          console.log(`[${reference}] Status check error:`, err.message);
+        }
+      }, 15000);
 
       res.json({ success: true, message: "STK push sent, check your phone", reference, receipt: receiptData });
     } else {
