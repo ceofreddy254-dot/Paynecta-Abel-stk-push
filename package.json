@@ -1,20 +1,17 @@
 {
-  "name": "paynecta-stk-server",
+  "name": "swiftloan-server",
   "version": "1.0.0",
-  "description": "SwiftPay STK Push Integration using PayNecta API",
+  "description": "SwiftLoan backend integrated with PayNecta API",
   "main": "server.js",
-  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "axios": "^1.7.2",
+    "axios": "^1.7.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "pdfkit": "^0.15.0"
-  },
-  "devDependencies": {
-    "
+    "pdfkit": "^0.14.0",
+    "node-cron": "^3.0.3"
+  }
+}
