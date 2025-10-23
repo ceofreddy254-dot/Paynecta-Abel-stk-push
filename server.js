@@ -18,7 +18,7 @@ const app = express();
 // ✅ Strict CORS — only allow your frontend
 app.use(
   cors({
-    origin: "https://swiftduty.onrender.com",
+    origin: "https://paymenttesting.onrender.com",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "X-API-Key", "X-User-Email"],
     credentials: true
@@ -298,6 +298,6 @@ app.use((req, res) => res.status(404).json({ success: false, message: "Not found
 // ✅ Start server
 app.listen(PORT, () => {
   console.log(`🚀 PayCenter PayNecta STK backend running on port ${PORT}`);
-  console.log(`🔒 Allowed origin: https://swiftduty.onrender.com`);
+  console.log(`🔒 Allowed origin: https://https://paymenttesting.onrender.com`);
   console.log(`🌍 PAYNECTA_BASE: ${PAYNECTA_BASE}`);
 });
