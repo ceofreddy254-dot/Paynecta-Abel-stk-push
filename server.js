@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🔐 PayNecta credentials
-const PAYNECTA_EMAIL = "ceofreddy254@gmail.com";
+const PAYNECTA_EMAIL = "kipkoechabel69@gmail.com";
 const PAYNECTA_API_KEY = "hmp_frCOR914YZjJiOoTsNiF6m5AXka5TVgtTKyeeoTO";
 const PAYNECTA_CODE = "PNT_366813";
 
