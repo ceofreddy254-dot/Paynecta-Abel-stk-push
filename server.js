@@ -137,8 +137,11 @@ app.post("/pay", async (req, res) => {
               return;
             }
 
-            if (payStatus === "completed" || payStatus === "processing") {
-              current.status = "processing";
+             if (payStatus === "completed") {
+  current.status = "completed";
+} else if (payStatus === "processing") {
+  current.status = "processing";
+}
               current.transaction_code = payData.mpesa_receipt_number || payData.mpesa_transaction_id || current.transaction_code;
               current.amount = payData.amount || current.amount;
               current.phone = payData.mobile_number || current.phone;
