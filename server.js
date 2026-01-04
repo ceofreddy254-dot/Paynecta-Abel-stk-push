@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 3000;
 
 // ====== Configuration - update env or keep these for testing ======
 const PAYNECTA_EMAIL = process.env.PAYNECTA_EMAIL || "ceofreddy254@gmail.com";
-const PAYNECTA_API_KEY = process.env.PAYNECTA_API_KEY || "hmp_qRLRJKTcVe4BhEQyp7GX5bttJTPzgYUUBU8wPZgO";
-const PAYNECTA_CODE = process.env.PAYNECTA_CODE || "PNT_109820";
+const PAYNECTA_API_KEY = process.env.PAYNECTA_API_KEY || "hmp_9eZQqKchvOZfbDDbaFU0xijdb1FnCS6Zw4vELd4K";
+const PAYNECTA_CODE = process.env.PAYNECTA_CODE || "PNT_609202";
 
 // The callback URL PayNecta will call (use your tested backend domain)
 const CALLBACK_URL = process.env.CALLBACK_URL || "https://abels-test-stk-push.onrender.com/callback";
@@ -23,7 +23,7 @@ const CALLBACK_URL = process.env.CALLBACK_URL || "https://abels-test-stk-push.on
 const receiptsFile = path.join(__dirname, "receipts.json");
 
 // CORS origin: keep frontend intact
-const FRONTEND_ORIGIN = "*";
+const FRONTEND_ORIGIN = "https://swiftcapitalportal.onrender.com";
 
 // Middleware
 app.use(bodyParser.json());
@@ -137,7 +137,7 @@ app.post("/pay", async (req, res) => {
               return;
             }
 
-            if (payStatus === "completed") {
+            if (payStatus === "completed" || payStatus === "processing") {
               current.status = "processing";
               current.transaction_code = payData.mpesa_receipt_number || payData.mpesa_transaction_id || current.transaction_code;
               current.amount = payData.amount || current.amount;
@@ -209,29 +209,9 @@ app.post("/pay", async (req, res) => {
     const receipts = readReceipts();
     receipts[reference] = errorReceiptData;
     writeReceipts(receipts);
+
     return res.status(500).json({ success: false, error: err.response?.data?.message || err.message || "Server error", receipt: errorReceiptData });
   }
-});
-
-// ---------- New: /api/verify-payment - endpoint for frontend polling ----------
-app.get("/api/verify-payment", (req, res) => {
-  const { reference } = req.query;
-  const receipts = readReceipts();
-  const receipt = receipts[reference];
-
-  if (!receipt) {
-    return res.status(404).json({ success: false, message: "Transaction not found" });
-  }
-
-  // Map backend status to what frontend expects (SUCCESS or COMPLETED)
-  let status = receipt.status.toUpperCase();
-  if (status === "PROCESSING") status = "COMPLETED"; // If backend verified it, it's successful for frontend
-
-  res.json({
-    success: true,
-    status: status,
-    message: receipt.status_note
-  });
 });
 
 // ---------- 2. /callback - webhook handler (PayNecta or aggregator) ----------
